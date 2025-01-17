@@ -169,3 +169,53 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Ignore auxiliary files created by TeX and LaTeX compilers
+*.aux
+*.bbl
+*.blg
+*.brf
+*.idx
+*.ilg
+*.ind
+*.lof
+*.log
+*.lot
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
+
+# Ignore backup files created by editors
+*.bak
+*.sav
+*~ 
+.#*
+
+# Ignore intermediate and output files
+*.dvi
+*.pdf
+*.ps
+*.eps
+
+# Ignore directories for TeX Live
+**/texlive/*
+/usr/local/texlive/*
+~/texmf/*
+
+# Ignore temporary files in general
+*.tmp
+*.swp
+*.DS_Store
+Thumbs.db
+
+# Ignore any personal settings
+*.tex.bak
+*.tex.swp
+*.latexmkrc
+
+*.v2

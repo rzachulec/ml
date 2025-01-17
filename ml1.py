@@ -55,7 +55,7 @@ model.compile(
 tf.keras.utils.plot_model(
     model,
     to_file="model.png",
-                          show_shapes=True,
+    show_shapes=True,
     show_dtype=True,
     show_layer_names=True,
     rankdir="TB",
