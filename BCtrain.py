@@ -30,12 +30,12 @@ def scaleData(df):
     y = target_scaler.fit_transform(y_prescaled.values.reshape(-1, 1))  # Reshape y to be a 2D array for scaling
 
 
-    # Check for NaN or infinite values
-    if np.any(np.isnan(X)) or np.any(np.isnan(y)):
-        print("NaN values detected in data!")
+    # # Check for NaN or infinite values
+    # if np.any(np.isnan(X)) or np.any(np.isnan(y)):
+    #     print("NaN values detected in data!")
         
-    if np.any(np.isinf(X)) or np.any(np.isinf(y)):
-        print("Infinite values detected in data!")
+    # if np.any(np.isinf(X)) or np.any(np.isinf(y)):
+    #     print("Infinite values detected in data!")
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
@@ -69,6 +69,9 @@ if __name__ == "__main__":
     print("Data loaded")
     
     X_train, X_test, y_train, y_test, scaler, target_scaler = scaleData(df)
+    
+    X_train.drop(columns=['Date'], inplace=True)
+    X_test.drop(columns=['Date'], inplace=True)
     
     # DEFINE MODEL
     # model = Sequential([

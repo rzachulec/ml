@@ -140,6 +140,7 @@ for building, info in building_info.items():
             
             # prepare the row data
             row_data = {
+                "Date": date,
                 "Hour": hour,
                 "Hour_Sin": round(hour_sin, 3),
                 "Hour_Cos": round(hour_cos, 3),
