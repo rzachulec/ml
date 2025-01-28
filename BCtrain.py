@@ -8,26 +8,22 @@ from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.initializers import HeNormal
 
 
-
-
-# Assuming your CSV file is named 'data.csv'
-df = pd.read_csv('building_data.csv')
+df = pd.read_csv('./data/training_data.csv')
 
 print(df['Facade_Orientation'].unique())
 df = pd.get_dummies(df, columns=['Area', 'Insulation'], drop_first=True)
 
 df = pd.get_dummies(df, columns=['Facade_Orientation'], drop_first=False)
 
-df['Time'] = pd.to_datetime(df['Time'], format='%H:%M:%S', errors='coerce')
-# TODO: stop adding 00:00:00 in blank spots as this causes outliers from daytime to migrate to midnight haha
-df['Time'].fillna(pd.to_datetime('00:00:00'), inplace=True)
-df['Hour'] = df['Time'].dt.hour  # Extract hour from the time
-df.drop(columns=['Time'], inplace=True)
+filters = {"Facade_Orientation_S": "True"}
+print("Df length before filters: ", len(df))
+for parameter, value in filters.items():
+    if parameter in df.columns:
+        print(f"Applying filter: {parameter} == {value}")
+        df = df[df[parameter].astype(str) == str(value)]
+print("Df length after filters: ", len(df))
 
-numerical_cols = ['Rain', 'Solar Rad', 'Prędkość wiatru  [m/s]', 'Temperatura powietrza [°C]', 
-                  'Wilgotność względna [%]', 'Ciśnienie na poziomie stacji [hPa]', 'Floor_Level', 'Hour']
-
-
+df.drop(columns=['Hour'], inplace=True)
 df.fillna(df.median(), inplace=True)
 
 scaler = StandardScaler()
@@ -75,7 +71,7 @@ callbacks=[
 
 model = Sequential([
     Dense(512, activation='relu', input_dim=X.shape[1], kernel_initializer=HeNormal()), 
-    Dropout(0.3),
+    Dropout(0.2),
     Dense(256, activation='relu', kernel_initializer=HeNormal()),
     Dense(128, activation='relu', kernel_initializer=HeNormal()),
     Dense(64, activation='relu', kernel_initializer=HeNormal()),
@@ -93,19 +89,21 @@ lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
 
 loss_fn = tf.keras.losses.MeanSquaredError()
 # optimizer = tf.keras.optimizers.legacy.SGD(learning_rate = lr_schedule, momentum = 0.6)
-optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=1e-6)
+optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=0.5e-5)
 
 model.compile(optimizer = optimizer, loss=loss_fn, metrics=["mae"])
 
 # TRAIN
 
-model.fit(X_train, y_train, verbose = 1, batch_size=100, epochs=300, callbacks=callbacks[0], validation_split=0.2)
+model.fit(X_train, y_train, verbose = 1, batch_size=100, epochs=300, callbacks=callbacks, validation_data=(X_test, y_test))
 
-model.save("BCmodel.h5")
+model.save("BCmodel_South_only.h5")
 
 score = model.evaluate(X_test, y_test, verbose=True)
-print("Test loss:", score[0])
-print("Test accuracy:", score[1])
+print("Test MSE:", score[0])
+print("Test MAE:", score[1])
+
+hour = 14.0
 
 example_data = {
     'Rain': 0.0,
@@ -121,8 +119,11 @@ example_data = {
     'Facade_Orientation_N': True,
     'Facade_Orientation_S': False,
     'Facade_Orientation_W': False,
-    'Hour': 14.0
+    'Hour_Cos': np.sin(2 * np.pi * hour / 24),
+    'Hour_Sin': np.cos(2 * np.pi * hour / 24)
 }
+
+
 
 example_df = pd.DataFrame([example_data])
 example_df = example_df.astype(float)
