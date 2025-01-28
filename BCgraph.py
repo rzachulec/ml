@@ -6,12 +6,11 @@ from keras.models import load_model
 from sklearn.preprocessing import StandardScaler
 import seaborn as sns
 
+from BCtrain import scaleData, columns_to_scale
+
 def filter_and_predict(data_path, model_path, filters=None):
     # Load the dataset
     df = pd.read_csv(data_path)
-
-    df = pd.get_dummies(df, columns=['Facade_Orientation'], drop_first=False)
-    df.fillna(df.median(), inplace=True)
     
     if filters:
         print("Df length before filters: ", len(df))
@@ -21,44 +20,40 @@ def filter_and_predict(data_path, model_path, filters=None):
                 df = df[df[parameter].astype(str) == str(value)]
         print("Df length after filters: ", len(df))
     
-    # Extract the 'Hour' column for plotting and drop it from the main DataFrame
-    hour_df = df['Hour']
-    df.drop(columns=['Hour'], inplace=True)
-    
-    print("Shape before one-hot encoding:", df.shape)
-    
-    # Preprocess categorical features
-    # df = pd.get_dummies(df, columns=['Area', 'Insulation'], drop_first=True)
-    
-    print("Shape after one-hot encoding:", df.shape)   
-    
-    # Scale the features and target
-    scaler = StandardScaler()
-    X_prescaled = df.drop('Temperature', axis=1)  # Features for scaling
-    X = scaler.fit_transform(X_prescaled)
-    
-    target_scaler = StandardScaler()
-    y_prescaled = df['Temperature']
-    y = target_scaler.fit_transform(y_prescaled.values.reshape(-1, 1))  # Reshape y to 2D for scaling
+    X_train, X_test, y_train, y_test, scaler, target_scaler = scaleData(df)
     
     # Load the pre-trained model and make predictions
     model = load_model(model_path)
-    predicted_output = model.predict(X)
+    predicted_output = model.predict(X_test)
     
     # Inverse transform predictions and true target values to their original scales
     predicted_output_original = target_scaler.inverse_transform(predicted_output)
-    true_output_original = target_scaler.inverse_transform(y)
+    true_output_original = target_scaler.inverse_transform(y_test)
+    X_test[columns_to_scale] = scaler.inverse_transform(X_test[columns_to_scale])
+    X_train[columns_to_scale] = scaler.inverse_transform(X_train[columns_to_scale])
     
+    return X_test, predicted_output_original, true_output_original
+    
+def plot(predicted_output_original, true_output_original, X_test, filters, model_path):
     # Add predictions, true values, and hours back to the DataFrame for plotting
-    df["Hour"] = hour_df.reset_index(drop=True)  # Re-add hour column
-    df["True_Temperature"] = true_output_original.flatten()
-    df["Predicted_Temperature"] = predicted_output_original.flatten()
-    df["Meteo_Temperature"] = df["Temperatura powietrza [°C]"]  # Rename feature temperature to Meteo Temperature
+    X_test_df = pd.DataFrame(X_test)
+    
+    hours = np.arctan2(X_test_df['Hour_Sin'], X_test_df['Hour_Cos']) * 24 / (2 * np.pi)
+    hours = hours % 24
+    meteo_temp = X_test_df['Temperatura powietrza [°C]']
+    print("Meteo temp: ", meteo_temp)
+    
+    plot_df = pd.DataFrame({
+        "Hour": round(hours, 0),
+        "Predicted_Temperature": predicted_output_original.flatten(),
+        "True_Temperature": true_output_original.flatten(),
+        "Meteo_Temperature": meteo_temp
+    })
     
     # Prepare data for plotting
     box_plot_data = []
-    for hour in sorted(hour_df.unique()):  # Use `hour_df` for the unique hour values
-        hourly_data = df[df["Hour"] == hour]  # Filter rows by the current hour
+    for hour in sorted(plot_df["Hour"].unique()):  
+        hourly_data = plot_df[plot_df["Hour"] == hour]  
         box_plot_data.append(pd.DataFrame({
             "Hour": [hour] * len(hourly_data),
             "Type": ["True Temperature"] * len(hourly_data),
@@ -79,7 +74,7 @@ def filter_and_predict(data_path, model_path, filters=None):
     box_plot_df = pd.concat(box_plot_data, ignore_index=True)
     
     # Generate a filter description for the title
-    filter_description = " | ".join([f"{k}: {v}" for k, v in filters.items()]) if filters else "No filters applied"
+    filter_description = " | ".join([f"{k}: {v}" for k, v in filters.items()]) if isinstance(filters, dict) else "No filters applied"
     
     # Plot the box plot using seaborn
     plt.figure(figsize=(16, 10))
@@ -92,7 +87,7 @@ def filter_and_predict(data_path, model_path, filters=None):
     )
     
     # Customize plot
-    plt.title(f"Box Plot of Temperatures by Hour of the Day\nFilters: {filter_description}\n Model: {model_path}", fontsize=16)
+    plt.title(f"Box Plot of Temperatures by Hour of the Day\nFilters: {filter_description}\nModel: {model_path}, Sample size: {int(np.floor(len(box_plot_df)/3))}", fontsize=16)
     plt.xlabel("Hour of the Day", fontsize=14)
     plt.ylabel("Temperature (°C)", fontsize=14)
     plt.legend(title="Temperature Type", fontsize=12, title_fontsize=14)
@@ -102,9 +97,12 @@ def filter_and_predict(data_path, model_path, filters=None):
     plt.tight_layout()
     plt.show()
 
-filters = {"Facade_Orientation_S": "True"}
-filter_and_predict(
-    data_path="./data/training_data.csv",
-    model_path="BCmodel_South_only.h5",
-    filters=filters
-)
+data_path="./data/training_data.csv"
+model_path="BCmodel.h5"
+filters = None
+# filters = {"Facade_Orientation_N": 1}
+# filters = {"Facade_Orientation_S": 1}
+# filters = {"Facade_Orientation_E": 1}
+filters = {"Facade_Orientation_W": 1}
+X_test, predicted_output_original, true_output_original = filter_and_predict(data_path, model_path, filters)
+plot(predicted_output_original, true_output_original, X_test, filters, model_path)
