@@ -219,3 +219,7 @@ Thumbs.db
 *.latexmkrc
 
 *.v2
+/sprawozdanie1
+/sprawozdanie2
+/.idea
+/ml.xcodeproj
