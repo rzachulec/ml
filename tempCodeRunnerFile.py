@@ -1,1 +1,0 @@
-"Insulation": "insulated", "Area": "concrete",
