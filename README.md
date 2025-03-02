@@ -8,7 +8,8 @@ This repository contains code used to conduct modelling of data collected as par
 
 ## How to run
 
-to run on linux/macos:
+Make sure you have python 3.+ and pip installed. 
+Clone the repository. Navigate to the created folder and in terminal, run the following commands (linux/macos): 
 
     python -m venv .venv
 then
