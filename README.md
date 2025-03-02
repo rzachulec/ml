@@ -1,4 +1,4 @@
-# B&C modelling
+# Urban temperarure correction model (B&C)
 
 This repository contains code used to conduct modelling of data collected as part of a study on building facade temperatures in relation to meteorological data.
 
