@@ -96,7 +96,7 @@ for building, info in building_info.items():
     for col_idx in building_cols:
         
         facade_orientation = str(facade_names[col_idx])[0]  # first letter (N, S, E, W)
-        floor_level = 0 if int(str(facade_names[col_idx])[1]) == 1 else 1        
+        ground_floor = 0 if int(str(facade_names[col_idx])[1]) == 1 else 1        
         facade_n, facade_s, facade_e, facade_w, facade_azimunth = 0, 0, 0, 0, 0
         if facade_orientation == 'N':
             facade_n = 1 
@@ -150,7 +150,8 @@ for building, info in building_info.items():
                 "Facade_Orientation_S": int(facade_s),
                 "Facade_Orientation_E": int(facade_e),
                 "Facade_Orientation_W": int(facade_w),
-                "Floor_Level": floor_level,
+                "Ground_floor": ground_floor,
+                "Upper_floor": 0 if ground_floor == 1 else 1,
                 "Area_green": 1 if info["area"] == "green" else 0,
                 "Area_concrete": 0 if info["area"] == "green" else 1,
                 "Insulation_insulated": 1 if info["insulation"] == "insulated" else 0,
